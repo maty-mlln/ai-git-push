@@ -10,7 +10,8 @@ import sys
 
 from dotenv import load_dotenv
 from format import box_print, print_gradient
-from mistralai import Mistral, SystemMessage, UserMessage
+from mistralai import (AssistantMessage, Mistral, SystemMessage, ToolMessage,
+                       UserMessage)
 
 
 def is_git_repository() -> bool:
@@ -84,7 +85,8 @@ def request_ai(usr_prompt: str) -> str:
 
     print_gradient("💭 AI generating commit message...", "cyan_blue")
 
-    conversation: list[UserMessage | SystemMessage] = [
+    conversation: list[AssistantMessage | SystemMessage | ToolMessage |
+                       UserMessage] = [
         SystemMessage(content=sys_prompt),
         UserMessage(content=usr_prompt)
     ]

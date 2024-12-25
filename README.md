@@ -1,6 +1,6 @@
 # 🚀 AI Git Push
 
-AI Git Push is a tool that automates the process of generating commit messages and pushing changes to a Git repository using AI.
+Automate the process of generating commit messages and pushing changes to a Git repository using AI.
 
 ## ✨ Features
 

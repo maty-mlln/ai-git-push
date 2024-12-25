@@ -101,16 +101,15 @@ def _push_to_branch() -> None:
     print_gradient(f"🚀 Pushing to {branch}...", "cyan_blue")
 
     push_result = subprocess.run(['git', 'push', 'origin', branch],
-                                 stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.DEVNULL,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
                                  check=False)
 
     if push_result.returncode == 0:
         print_gradient(f"✅ Successfully pushed to {branch}", "green_lime")
     else:
-        print_gradient(f"❌ Error: Failed to push to {branch}", "red_magenta")
-        print_gradient(f"💡 Try running: git push origin {branch} manually",
-                       "yellow_orange")
+        print_gradient(f"❌ Error: Failed to push to {branch}: " +
+                       f"{push_result.stderr.decode()}", "red_magenta")
 
 
 def _build_commit_message(message: str,
@@ -138,7 +137,7 @@ def _get_user_confirmation(commit_message: str) -> bool:
     print_gradient(box_print(commit_message), "light_gray")
     print_gradient("🛎️ Do you want to proceed? [Y/n] ", "yellow_orange", False)
     response = input()
-    return response.lower() in ('y', 'yes', '')
+    return response.strip().lower() in ('y', '')
 
 
 def commit_and_push_changes(message: str = "") -> None:

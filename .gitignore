@@ -4,8 +4,12 @@
 # IDE
 .vscode/
 
-# Environment
+# Sensible data
 .env
+
+# Cache
+.mypy_cache/
+__pycache__/
 
 # Object files
 *.o
@@ -18,7 +22,7 @@
 *.map
 *.exp
 
-# Precompiled Headers
+# Precompiled headers
 *.gch
 *.pch
 

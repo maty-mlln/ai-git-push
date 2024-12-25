@@ -1,57 +1,23 @@
+"""
+Main module for the AI Git Push tool.
+"""
+
+
 import subprocess
 import signal
 import sys
 import os
 
+from format import print_gradient, box_print
+
 from dotenv import load_dotenv
-from mistralai import Mistral
+from mistralai import Mistral, SystemMessage, UserMessage
 
 
-def gradient_text(text, start_hex, end_hex, bold=True):
-    result = ""
-    start_hex = start_hex.lstrip('#')
-    end_hex = end_hex.lstrip('#')
-    
-    start_r, start_g, start_b = (int(start_hex[i:i+2], 16) for i in (0, 2, 4))
-    end_r, end_g, end_b = (int(end_hex[i:i+2], 16) for i in (0, 2, 4))
-    
-    for i, char in enumerate(text):
-        progress = i / (len(text) - 1) if len(text) > 1 else 0
-        r = int(start_r + (end_r - start_r) * progress)
-        g = int(start_g + (end_g - start_g) * progress)
-        b = int(start_b + (end_b - start_b) * progress)
-        result += f"\033[{('1;' if bold else '')}38;2;{r};{g};{b}m{char}"
-    
-    return result + "\033[0m"
-
-
-def print_gradient(text, type="light_gray", line_break=True):
-    colors = {
-        "red_magenta": ("#FF2828", "#FF28FF"),
-        "cyan_blue": ("#28FFFF", "#2828FF"),
-        "green_lime": ("#28FF28", "#28FFB4"),
-        "yellow_orange": ("#FFFF28", "#FFB428"),
-        "light_gray": ("#FAFAFA", "#E1EAEE"),
-        "pink_purple": ("#FF28FF", "#B428FF")
-    }
-    
-    start_hex, end_hex = colors.get(type, colors["light_gray"])
-    print(gradient_text(text, start_hex, end_hex,
-                        bold=(type != "light_gray")),
-          end='\n' if line_break else '')
-
-def box_print(text):
-    lines = text.split('\n')
-    width = max(len(line) for line in lines)
-    
-    box = f"╭{'─' * (width + 2)}╮\n"
-    for line in lines:
-        box += f"│ {line:<{width}} │\n"
-    box += f"╰{'─' * (width + 2)}╯"
-    return box
-
-
-def is_git_repository():
+def is_git_repository() -> bool:
+    """
+    Check if the current directory is a git repository.
+    """
     try:
         subprocess.check_output(['git', 'rev-parse', '--git-dir'],
                                 stderr=subprocess.STDOUT)
@@ -60,14 +26,20 @@ def is_git_repository():
         return False
 
 
-def get_changed_files(filter_type):
+def get_changed_files(filter_type) -> list:
+    """
+    Get the list of files that have been added, modified, or deleted.
+    """
     result = subprocess.check_output(['git', 'diff', '--cached',
                                       '--name-only',
                                       f'--diff-filter={filter_type}'])
     return ["      " + line for line in result.decode().splitlines()]
 
 
-def is_initial_commit():
+def is_initial_commit() -> bool:
+    """
+    Check if the current commit is the initial commit.
+    """
     try:
         subprocess.check_output(['git', 'rev-parse', 'HEAD'],
                                 stderr=subprocess.DEVNULL)
@@ -76,7 +48,10 @@ def is_initial_commit():
         return True
 
 
-def get_changes_summary():
+def get_changes_summary() -> str:
+    """
+    Get the summary of changes in the current commit.
+    """
     try:
         if is_initial_commit():
             result = subprocess.check_output(['git', 'diff', '--cached'])
@@ -89,37 +64,51 @@ def get_changes_summary():
         sys.exit(1)
 
 
-def request_ai(prompt):
-    system_prompt_path = '/home/maty/Tools/ai-git-push/config/sys_prompt.md'
-    if not os.path.isfile(system_prompt_path):
-        system_prompt_path = '/Users/maty/Tools/ai-git-push/config/sys_prompt.md'
-        if not os.path.isfile(system_prompt_path):
+def request_ai(usr_prompt) -> str:
+    """
+    Request AI to generate a commit message.
+    """
+    sys_prompt_path = '/home/maty/Tools/ai-git-push/config/sys_prompt.md'
+    if not os.path.isfile(sys_prompt_path):
+        sys_prompt_path = '/Users/maty/Tools/ai-git-push/config/sys_prompt.md'
+        if not os.path.isfile(sys_prompt_path):
             print_gradient("❌ Error: 'sys_prompt.md' file not found.",
                            "red_magenta")
             sys.exit(1)
-    with open(system_prompt_path, 'r') as f:
-        system_prompt = f.read()
+    with open(sys_prompt_path, 'r', encoding='utf-8') as f:
+        sys_prompt = f.read()
 
     api_key = os.getenv('MISTRAL_API_KEY')
     client = Mistral(api_key)
 
     print_gradient("💭 AI generating commit message...", "cyan_blue")
 
-    try:
-        stream = client.chat.complete(
-            model=os.getenv('MISTRAL_MODEL'),
-            messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
-            ]
-        )
-        return stream.choices[0].message.content
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return None
+    conversation: list = [
+        SystemMessage(content=sys_prompt),
+        UserMessage(content=usr_prompt)
+    ]
+
+    response = client.chat.complete(
+        model=os.getenv('MISTRAL_MODEL'),
+        messages = conversation,
+    )
+
+    if not response or not response.choices:
+        print_gradient("❌ Error: AI failed to generate commit message",
+                        "red_magenta")
+        sys.exit(1)
+    response_msg = response.choices[0].message.content
+    if isinstance(response_msg, str):
+        return response_msg
+    else:
+        print_gradient("❌ Error: AI response is not a valid string", "red_magenta")
+        sys.exit(1)
 
 
-def generate_commit_message(message=None):
+def generate_commit_message(message=None) -> None:
+    """
+    Generate a commit message and push to the current branch.
+    """
     try:
         added_files = get_changed_files('A')
         modified_files = get_changed_files('M')
@@ -154,18 +143,18 @@ def generate_commit_message(message=None):
 
         print_gradient("✅ Successfully generated commit message", "green_lime")
         print_gradient(box_print(commit_message), "light_gray")
-        
         print_gradient("🛎️ Do you want to proceed? [Y/n] ", "yellow_orange",
                        False)
         response = input()
         if response.lower() not in ('y', 'yes', ''):
             return generate_commit_message()
 
-        with open('commit_msg.txt', 'w') as f:
+        with open('commit_msg.txt', 'w', encoding='utf-8') as f:
             f.write(commit_message)
 
         subprocess.run(['git', 'commit', '-F', 'commit_msg.txt'],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       check=True)
         os.remove('commit_msg.txt')
 
         branch = subprocess.check_output([
@@ -173,7 +162,8 @@ def generate_commit_message(message=None):
         print_gradient(f"🚀 Pushing to {branch}...", "cyan_blue")
         push_result = subprocess.run(['git', 'push', 'origin', branch],
                                      stdout=subprocess.DEVNULL,
-                                     stderr=subprocess.DEVNULL)
+                                     stderr=subprocess.DEVNULL,
+                                     check=False)
         if push_result.returncode == 0:
             print_gradient(f"✅ Successfully pushed to {branch}",
                            "green_lime")
@@ -188,15 +178,20 @@ def generate_commit_message(message=None):
         sys.exit(0)
 
 
-def signal_handler(sig, frame):
+def signal_handler(_signum, _frame) -> None:
+    """
+    Handle the SIGINT signal (Ctrl+C).
+    """
     print('\n', end='')
     print_gradient("👋 Exiting...", "yellow_orange")
     sys.exit(0)
 
 
-def main():
+def main() -> None:
+    """
+    Main function.
+    """
     signal.signal(signal.SIGINT, signal_handler)
-    
     load_dotenv()
 
     try:
@@ -205,7 +200,7 @@ def main():
             sys.exit(1)
 
         print_gradient("🚧 Checking for changes...", "yellow_orange")
-        subprocess.run(['git', 'add', '.'])
+        subprocess.run(['git', 'add', '.'], check=True)
 
         status = subprocess.check_output([
             'git', 'status', '--porcelain']).decode().strip()
@@ -219,7 +214,6 @@ def main():
         print('\n', end='')
         print_gradient("👋 Operation cancelled", "yellow_orange")
         sys.exit(0)
-        
 
 if __name__ == "__main__":
     main()

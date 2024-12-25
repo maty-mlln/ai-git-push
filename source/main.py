@@ -27,26 +27,21 @@ def main() -> None:
     signal.signal(signal.SIGINT, signal_handler)
     load_dotenv()
 
-    try:
-        if not is_git_repository():
-            print_gradient("❌ Error: Not a git repository", "red_magenta")
-            sys.exit(1)
+    if not is_git_repository():
+        print_gradient("❌ Error: Not a git repository", "red_magenta")
+        sys.exit(1)
 
-        print_gradient("🚧 Checking for changes...", "yellow_orange")
-        subprocess.run(['git', 'add', '.'], check=True)
+    print_gradient("🚧 Checking for changes...", "yellow_orange")
+    subprocess.run(['git', 'add', '.'], check=True)
 
-        status = subprocess.check_output([
-            'git', 'status', '--porcelain']).decode().strip()
-        if status:
-            message: str = sys.argv[1] if len(sys.argv) > 1 else ""
-            commit_and_push_changes(message)
-        else:
-            print_gradient("❌ Error: No changes to commit", "red_magenta")
-            sys.exit(1)
-    except KeyboardInterrupt:
-        print('\n', end='')
-        print_gradient("👋 Operation cancelled", "yellow_orange")
-        sys.exit(0)
+    status = subprocess.check_output([
+        'git', 'status', '--porcelain']).decode().strip()
+    if status:
+        message: str = sys.argv[1] if len(sys.argv) > 1 else ""
+        commit_and_push_changes(message)
+    else:
+        print_gradient("❌ Error: No changes to commit", "red_magenta")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

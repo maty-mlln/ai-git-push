@@ -23,23 +23,18 @@ def ask_llm(usr_prompt: str) -> str:
             sys.exit(1)
     with open(sys_prompt_path, 'r', encoding='utf-8') as f:
         sys_prompt = f.read()
-
     api_key = os.getenv('MISTRAL_API_KEY')
     client = Mistral(api_key)
-
     print_gradient("💭 AI generating commit message...", "cyan_blue")
-
     conversation: list[AssistantMessage | SystemMessage | ToolMessage |
                        UserMessage] = [
         SystemMessage(content=sys_prompt),
         UserMessage(content=usr_prompt)
     ]
-
     response = client.chat.complete(
         model=os.getenv('MISTRAL_MODEL'),
         messages=conversation,
     )
-
     if not response or not response.choices:
         print_gradient("❌ Error: AI failed to generate commit message",
                        "red_magenta")

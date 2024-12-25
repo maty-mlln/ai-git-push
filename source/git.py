@@ -70,7 +70,6 @@ def _get_file_statistics() -> dict[str, tuple[list[str], int]]:
     modified_files: list[str] = _get_changed_files('M')
     deleted_files: list[str] = _get_changed_files('D')
     renamed_files: list[str] = _get_changed_files('R')
-
     return {
         'added': (added_files, len(added_files)),
         'modified': (modified_files, len(modified_files)),
@@ -85,7 +84,6 @@ def _perform_git_commit(commit_message: str) -> None:
     """
     with open('commit_msg.txt', 'w', encoding='utf-8') as f:
         f.write(commit_message)
-
     subprocess.run(['git', 'commit', '-F', 'commit_msg.txt'],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                    check=True)
@@ -99,12 +97,10 @@ def _push_to_branch() -> None:
     branch = subprocess.check_output([
         'git', 'branch', '--show-current']).decode().strip()
     print_gradient(f"🚀 Pushing to {branch}...", "cyan_blue")
-
     push_result = subprocess.run(['git', 'push', 'origin', branch],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
                                  check=False)
-
     if push_result.returncode == 0:
         print_gradient(f"✅ Successfully pushed to {branch}", "green_lime")
     else:
@@ -120,7 +116,6 @@ def _build_commit_message(message: str,
     """
     if message:
         return message
-
     commit_message: str = f"{ai_summary}\n\nDetailed changes:"
     for category, (files, count) in stats.items():
         if count > 0:
@@ -148,12 +143,9 @@ def commit_and_push_changes(message: str = "") -> None:
         stats: dict[str, tuple[list[str], int]] = _get_file_statistics()
         changes_summary = _get_changes_summary()
         ai_summary = ask_llm(changes_summary)
-
         commit_message = _build_commit_message(message, stats, ai_summary)
-
         if not _get_user_confirmation(commit_message):
             return commit_and_push_changes()
-
         _perform_git_commit(commit_message)
         _push_to_branch()
 

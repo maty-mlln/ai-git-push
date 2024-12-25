@@ -3,7 +3,8 @@ This module contains functions for formatting text output.
 """
 
 
-def gradient_text(text, start_hex, end_hex, bold=True):
+def gradient_text(text: str, start_hex: str, end_hex: str,
+                  bold: bool = True) -> str:
     """
     Return a string with the text colored with a gradient.
     """
@@ -21,7 +22,8 @@ def gradient_text(text, start_hex, end_hex, bold=True):
     return result + "\033[0m"
 
 
-def print_gradient(text, gradient="light_gray", line_break=True):
+def print_gradient(text: str, gradient: str = "light_gray",
+                   line_break: bool = True) -> None:
     """
     Print the text with a gradient color.
     """
@@ -35,11 +37,11 @@ def print_gradient(text, gradient="light_gray", line_break=True):
     }
     start_hex, end_hex = gradients.get(gradient, gradients["light_gray"])
     print(gradient_text(text, start_hex, end_hex,
-                        bold = gradient != "light_gray"),
+                        bold=gradient != "light_gray"),
           end='\n' if line_break else '')
 
 
-def box_print(text):
+def box_print(text: str) -> str:
     """
     Return a string with the text in a box.
     """

@@ -3,6 +3,8 @@
 
 # IDE
 .vscode/
+.pylintrc
+.flake8
 
 # Sensible data
 .env

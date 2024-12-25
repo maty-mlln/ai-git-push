@@ -3,14 +3,13 @@ Main module for the AI Git Push tool.
 """
 
 
-import subprocess
-import signal
-import sys
 import os
-
-from format import print_gradient, box_print
+import signal
+import subprocess
+import sys
 
 from dotenv import load_dotenv
+from format import box_print, print_gradient
 from mistralai import Mistral, SystemMessage, UserMessage
 
 
@@ -26,14 +25,16 @@ def is_git_repository() -> bool:
         return False
 
 
-def get_changed_files(filter_type) -> list:
+def get_changed_files(filter_type: str) -> list[str]:
     """
     Get the list of files that have been added, modified, or deleted.
     """
     result = subprocess.check_output(['git', 'diff', '--cached',
                                       '--name-only',
                                       f'--diff-filter={filter_type}'])
-    return ["      " + line for line in result.decode().splitlines()]
+    res_list: list[str] = ["      " +
+                           line for line in result.decode().splitlines()]
+    return res_list
 
 
 def is_initial_commit() -> bool:
@@ -54,17 +55,17 @@ def get_changes_summary() -> str:
     """
     try:
         if is_initial_commit():
-            result = subprocess.check_output(['git', 'diff', '--cached'])
+            res = subprocess.check_output(['git', 'diff', '--cached'])
         else:
-            result = subprocess.check_output(['git', 'diff', 'HEAD'])
-        return '\n'.join(['\t' + line for line in result.decode().splitlines()])
+            res = subprocess.check_output(['git', 'diff', 'HEAD'])
+        return '\n'.join(['\t' + line for line in res.decode().splitlines()])
     except subprocess.CalledProcessError as e:
         print_gradient(f"❌ Error: could not get changes summary: {str(e)}",
                        "red_magenta")
         sys.exit(1)
 
 
-def request_ai(usr_prompt) -> str:
+def request_ai(usr_prompt: str) -> str:
     """
     Request AI to generate a commit message.
     """
@@ -83,29 +84,30 @@ def request_ai(usr_prompt) -> str:
 
     print_gradient("💭 AI generating commit message...", "cyan_blue")
 
-    conversation: list = [
+    conversation: list[UserMessage | SystemMessage] = [
         SystemMessage(content=sys_prompt),
         UserMessage(content=usr_prompt)
     ]
 
     response = client.chat.complete(
         model=os.getenv('MISTRAL_MODEL'),
-        messages = conversation,
+        messages=conversation,
     )
 
     if not response or not response.choices:
         print_gradient("❌ Error: AI failed to generate commit message",
-                        "red_magenta")
+                       "red_magenta")
         sys.exit(1)
     response_msg = response.choices[0].message.content
     if isinstance(response_msg, str):
         return response_msg
     else:
-        print_gradient("❌ Error: AI response is not a valid string", "red_magenta")
+        print_gradient(
+            "❌ Error: AI response is not a valid string", "red_magenta")
         sys.exit(1)
 
 
-def generate_commit_message(message=None) -> None:
+def generate_commit_message(message: str = "") -> None:
     """
     Generate a commit message and push to the current branch.
     """
@@ -125,21 +127,21 @@ def generate_commit_message(message=None) -> None:
         renamed_count = len(renamed_files)
 
         if message:
-            commit_message = message
+            commit_message: str = message
         else:
             commit_message = f"{ai_summary}\n\nDetailed changes:"
             if added_count > 0:
                 commit_message += (f"\n\nAdded ({added_count}):\n"
-                + '\n'.join(added_files))
+                                   + '\n'.join(added_files))
             if modified_count > 0:
                 commit_message += (f"\n\nModified ({modified_count}):\n"
-                + '\n'.join(modified_files))
+                                   + '\n'.join(modified_files))
             if deleted_count > 0:
                 commit_message += (f"\n\nDeleted ({deleted_count}):\n"
-                + '\n'.join(deleted_files))
+                                   + '\n'.join(deleted_files))
             if renamed_count > 0:
                 commit_message += (f"\n\nRenamed ({renamed_count}):\n"
-                + '\n'.join(renamed_files))
+                                   + '\n'.join(renamed_files))
 
         print_gradient("✅ Successfully generated commit message", "green_lime")
         print_gradient(box_print(commit_message), "light_gray")
@@ -178,7 +180,7 @@ def generate_commit_message(message=None) -> None:
         sys.exit(0)
 
 
-def signal_handler(_signum, _frame) -> None:
+def signal_handler(_signum: int, _frame: object) -> None:
     """
     Handle the SIGINT signal (Ctrl+C).
     """
@@ -205,7 +207,7 @@ def main() -> None:
         status = subprocess.check_output([
             'git', 'status', '--porcelain']).decode().strip()
         if status:
-            message = sys.argv[1] if len(sys.argv) > 1 else None
+            message: str = sys.argv[1] if len(sys.argv) > 1 else ""
             generate_commit_message(message)
         else:
             print_gradient("❌ Error: No changes to commit", "red_magenta")
@@ -214,6 +216,7 @@ def main() -> None:
         print('\n', end='')
         print_gradient("👋 Operation cancelled", "yellow_orange")
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

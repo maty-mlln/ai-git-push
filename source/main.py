@@ -11,7 +11,7 @@ from format import print_gradient
 from git import commit_and_push_changes, is_git_repository
 
 
-def signal_handler(_signum: int, _frame: object) -> None:
+def _signal_handler(_signum: int, _frame: object) -> None:
     """
     Handle the SIGINT signal (Ctrl+C).
     """
@@ -24,7 +24,7 @@ def main() -> None:
     """
     Main function.
     """
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
     load_dotenv()
 
     if not is_git_repository():
@@ -42,6 +42,7 @@ def main() -> None:
     else:
         print_gradient("❌ Error: No changes to commit", "red_magenta")
         sys.exit(1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

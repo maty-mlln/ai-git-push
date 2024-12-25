@@ -3,8 +3,8 @@ This module contains functions for formatting text output.
 """
 
 
-def gradient_text(text: str, start_hex: str, end_hex: str,
-                  bold: bool = True) -> str:
+def _gradient_text(text: str, start_hex: str, end_hex: str,
+                   bold: bool = True) -> str:
     """
     Return a string with the text colored with a gradient.
     """
@@ -36,8 +36,8 @@ def print_gradient(text: str, gradient: str = "light_gray",
         "pink_purple": ("#FF28FF", "#B428FF")
     }
     start_hex, end_hex = gradients.get(gradient, gradients["light_gray"])
-    print(gradient_text(text, start_hex, end_hex,
-                        bold=gradient != "light_gray"),
+    print(_gradient_text(text, start_hex, end_hex,
+                         bold=gradient != "light_gray"),
           end='\n' if line_break else '')
 
 

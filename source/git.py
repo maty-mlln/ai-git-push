@@ -22,7 +22,7 @@ def is_git_repository() -> bool:
         return False
 
 
-def get_changed_files(filter_type: str) -> list[str]:
+def _get_changed_files(filter_type: str) -> list[str]:
     """
     Get the list of files that have been added, modified, or deleted.
     """
@@ -34,7 +34,7 @@ def get_changed_files(filter_type: str) -> list[str]:
     return res_list
 
 
-def is_initial_commit() -> bool:
+def _is_initial_commit() -> bool:
     """
     Check if the current commit is the initial commit.
     """
@@ -46,12 +46,12 @@ def is_initial_commit() -> bool:
         return True
 
 
-def get_changes_summary() -> str:
+def _get_changes_summary() -> str:
     """
     Get the summary of changes in the current commit.
     """
     try:
-        if is_initial_commit():
+        if _is_initial_commit():
             res = subprocess.check_output(['git', 'diff', '--cached'])
         else:
             res = subprocess.check_output(['git', 'diff', 'HEAD'])
@@ -62,14 +62,14 @@ def get_changes_summary() -> str:
         sys.exit(1)
 
 
-def get_file_statistics():
+def _get_file_statistics() -> dict[str, tuple[list[str], int]]:
     """
     Get statistics about changed files.
     """
-    added_files = get_changed_files('A')
-    modified_files = get_changed_files('M')
-    deleted_files = get_changed_files('D')
-    renamed_files = get_changed_files('R')
+    added_files: list[str] = _get_changed_files('A')
+    modified_files: list[str] = _get_changed_files('M')
+    deleted_files: list[str] = _get_changed_files('D')
+    renamed_files: list[str] = _get_changed_files('R')
 
     return {
         'added': (added_files, len(added_files)),
@@ -79,7 +79,7 @@ def get_file_statistics():
     }
 
 
-def perform_git_commit(commit_message: str) -> None:
+def _perform_git_commit(commit_message: str) -> None:
     """
     Perform the git commit operation.
     """
@@ -92,7 +92,7 @@ def perform_git_commit(commit_message: str) -> None:
     os.remove('commit_msg.txt')
 
 
-def push_to_branch() -> None:
+def _push_to_branch() -> None:
     """
     Push changes to the current branch.
     """
@@ -113,8 +113,9 @@ def push_to_branch() -> None:
                        "yellow_orange")
 
 
-def build_commit_message(message: str, stats: dict[str, tuple[list[str], int]],
-                         ai_summary: str) -> str:
+def _build_commit_message(message: str,
+                          stats: dict[str, tuple[list[str], int]],
+                          ai_summary: str) -> str:
     """
     Build the commit message from the given components.
     """
@@ -129,7 +130,7 @@ def build_commit_message(message: str, stats: dict[str, tuple[list[str], int]],
     return commit_message
 
 
-def get_user_confirmation(commit_message: str) -> bool:
+def _get_user_confirmation(commit_message: str) -> bool:
     """
     Get user confirmation for the commit message.
     """
@@ -145,17 +146,17 @@ def commit_and_push_changes(message: str = "") -> None:
     Generate a commit message and push to the current branch.
     """
     try:
-        stats = get_file_statistics()
-        changes_summary = get_changes_summary()
+        stats: dict[str, tuple[list[str], int]] = _get_file_statistics()
+        changes_summary = _get_changes_summary()
         ai_summary = ask_llm(changes_summary)
 
-        commit_message = build_commit_message(message, stats, ai_summary)
+        commit_message = _build_commit_message(message, stats, ai_summary)
 
-        if not get_user_confirmation(commit_message):
+        if not _get_user_confirmation(commit_message):
             return commit_and_push_changes()
 
-        perform_git_commit(commit_message)
-        push_to_branch()
+        _perform_git_commit(commit_message)
+        _push_to_branch()
 
     except KeyboardInterrupt:
         print('\n', end='')

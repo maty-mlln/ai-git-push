@@ -5,18 +5,19 @@ This module contains functions to interact with the AI model API.
 import os
 import sys
 
-from format import print_gradient
 from mistralai import (AssistantMessage, Mistral, SystemMessage, ToolMessage,
                        UserMessage)
+
+from format import print_gradient
 
 
 def ask_llm(usr_prompt: str) -> str:
     """
     Request AI to generate a commit message.
     """
-    sys_prompt_path = '/home/maty/Tools/ai-git-push/config/sys_prompt.md'
+    sys_prompt_path = '/home/maty/Tools/ai-git-push/conf/sys_prompt.md'
     if not os.path.isfile(sys_prompt_path):
-        sys_prompt_path = '/Users/maty/Tools/ai-git-push/config/sys_prompt.md'
+        sys_prompt_path = '/Users/maty/Tools/ai-git-push/conf/sys_prompt.md'
         if not os.path.isfile(sys_prompt_path):
             print_gradient("❌ Error: 'sys_prompt.md' file not found.",
                            "red_magenta")

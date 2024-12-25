@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from dotenv import load_dotenv
+
 from format import print_gradient
 from git import commit_and_push_changes, is_git_repository
 

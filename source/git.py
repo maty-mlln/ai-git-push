@@ -2,10 +2,12 @@
 This module contains functions to interact with Git.
 """
 
+import os
 import subprocess
 import sys
 
-from format import print_gradient
+from format import box_print, print_gradient
+from llm import ask_llm
 
 
 def is_git_repository() -> bool:
@@ -58,3 +60,104 @@ def get_changes_summary() -> str:
         print_gradient(f"❌ Error: could not get changes summary: {str(e)}",
                        "red_magenta")
         sys.exit(1)
+
+
+def get_file_statistics():
+    """
+    Get statistics about changed files.
+    """
+    added_files = get_changed_files('A')
+    modified_files = get_changed_files('M')
+    deleted_files = get_changed_files('D')
+    renamed_files = get_changed_files('R')
+
+    return {
+        'added': (added_files, len(added_files)),
+        'modified': (modified_files, len(modified_files)),
+        'deleted': (deleted_files, len(deleted_files)),
+        'renamed': (renamed_files, len(renamed_files))
+    }
+
+
+def perform_git_commit(commit_message: str) -> None:
+    """
+    Perform the git commit operation.
+    """
+    with open('commit_msg.txt', 'w', encoding='utf-8') as f:
+        f.write(commit_message)
+
+    subprocess.run(['git', 'commit', '-F', 'commit_msg.txt'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                   check=True)
+    os.remove('commit_msg.txt')
+
+
+def push_to_branch() -> None:
+    """
+    Push changes to the current branch.
+    """
+    branch = subprocess.check_output([
+        'git', 'branch', '--show-current']).decode().strip()
+    print_gradient(f"🚀 Pushing to {branch}...", "cyan_blue")
+
+    push_result = subprocess.run(['git', 'push', 'origin', branch],
+                                 stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL,
+                                 check=False)
+
+    if push_result.returncode == 0:
+        print_gradient(f"✅ Successfully pushed to {branch}", "green_lime")
+    else:
+        print_gradient(f"❌ Error: Failed to push to {branch}", "red_magenta")
+        print_gradient(f"💡 Try running: git push origin {branch} manually",
+                       "yellow_orange")
+
+
+def build_commit_message(message: str, stats: dict[str, tuple[list[str], int]],
+                         ai_summary: str) -> str:
+    """
+    Build the commit message from the given components.
+    """
+    if message:
+        return message
+
+    commit_message: str = f"{ai_summary}\n\nDetailed changes:"
+    for category, (files, count) in stats.items():
+        if count > 0:
+            commit_message += (f"\n\n{category.title()} ({count}):\n" +
+                               '\n'.join(files))
+    return commit_message
+
+
+def get_user_confirmation(commit_message: str) -> bool:
+    """
+    Get user confirmation for the commit message.
+    """
+    print_gradient("✅ Successfully generated commit message", "green_lime")
+    print_gradient(box_print(commit_message), "light_gray")
+    print_gradient("🛎️ Do you want to proceed? [Y/n] ", "yellow_orange", False)
+    response = input()
+    return response.lower() in ('y', 'yes', '')
+
+
+def commit_and_push_changes(message: str = "") -> None:
+    """
+    Generate a commit message and push to the current branch.
+    """
+    try:
+        stats = get_file_statistics()
+        changes_summary = get_changes_summary()
+        ai_summary = ask_llm(changes_summary)
+
+        commit_message = build_commit_message(message, stats, ai_summary)
+
+        if not get_user_confirmation(commit_message):
+            return commit_and_push_changes()
+
+        perform_git_commit(commit_message)
+        push_to_branch()
+
+    except KeyboardInterrupt:
+        print('\n', end='')
+        print_gradient("👋 Commit cancelled", "yellow_orange")
+        sys.exit(0)

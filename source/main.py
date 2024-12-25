@@ -2,7 +2,6 @@
 Main module for the AI Git Push tool.
 """
 
-
 import os
 import signal
 import subprocess
@@ -10,103 +9,8 @@ import sys
 
 from dotenv import load_dotenv
 from format import box_print, print_gradient
-from mistralai import (AssistantMessage, Mistral, SystemMessage, ToolMessage,
-                       UserMessage)
-
-
-def is_git_repository() -> bool:
-    """
-    Check if the current directory is a git repository.
-    """
-    try:
-        subprocess.check_output(['git', 'rev-parse', '--git-dir'],
-                                stderr=subprocess.STDOUT)
-        return True
-    except subprocess.CalledProcessError:
-        return False
-
-
-def get_changed_files(filter_type: str) -> list[str]:
-    """
-    Get the list of files that have been added, modified, or deleted.
-    """
-    result = subprocess.check_output(['git', 'diff', '--cached',
-                                      '--name-only',
-                                      f'--diff-filter={filter_type}'])
-    res_list: list[str] = ["      " +
-                           line for line in result.decode().splitlines()]
-    return res_list
-
-
-def is_initial_commit() -> bool:
-    """
-    Check if the current commit is the initial commit.
-    """
-    try:
-        subprocess.check_output(['git', 'rev-parse', 'HEAD'],
-                                stderr=subprocess.DEVNULL)
-        return False
-    except subprocess.CalledProcessError:
-        return True
-
-
-def get_changes_summary() -> str:
-    """
-    Get the summary of changes in the current commit.
-    """
-    try:
-        if is_initial_commit():
-            res = subprocess.check_output(['git', 'diff', '--cached'])
-        else:
-            res = subprocess.check_output(['git', 'diff', 'HEAD'])
-        return '\n'.join(['\t' + line for line in res.decode().splitlines()])
-    except subprocess.CalledProcessError as e:
-        print_gradient(f"❌ Error: could not get changes summary: {str(e)}",
-                       "red_magenta")
-        sys.exit(1)
-
-
-def request_ai(usr_prompt: str) -> str:
-    """
-    Request AI to generate a commit message.
-    """
-    sys_prompt_path = '/home/maty/Tools/ai-git-push/config/sys_prompt.md'
-    if not os.path.isfile(sys_prompt_path):
-        sys_prompt_path = '/Users/maty/Tools/ai-git-push/config/sys_prompt.md'
-        if not os.path.isfile(sys_prompt_path):
-            print_gradient("❌ Error: 'sys_prompt.md' file not found.",
-                           "red_magenta")
-            sys.exit(1)
-    with open(sys_prompt_path, 'r', encoding='utf-8') as f:
-        sys_prompt = f.read()
-
-    api_key = os.getenv('MISTRAL_API_KEY')
-    client = Mistral(api_key)
-
-    print_gradient("💭 AI generating commit message...", "cyan_blue")
-
-    conversation: list[AssistantMessage | SystemMessage | ToolMessage |
-                       UserMessage] = [
-        SystemMessage(content=sys_prompt),
-        UserMessage(content=usr_prompt)
-    ]
-
-    response = client.chat.complete(
-        model=os.getenv('MISTRAL_MODEL'),
-        messages=conversation,
-    )
-
-    if not response or not response.choices:
-        print_gradient("❌ Error: AI failed to generate commit message",
-                       "red_magenta")
-        sys.exit(1)
-    response_msg = response.choices[0].message.content
-    if isinstance(response_msg, str):
-        return response_msg
-    else:
-        print_gradient(
-            "❌ Error: AI response is not a valid string", "red_magenta")
-        sys.exit(1)
+from git import get_changed_files, get_changes_summary, is_git_repository
+from llm import ask_llm
 
 
 def generate_commit_message(message: str = "") -> None:
@@ -121,7 +25,7 @@ def generate_commit_message(message: str = "") -> None:
 
         changes_summary = get_changes_summary()
 
-        ai_summary = request_ai(changes_summary)
+        ai_summary = ask_llm(changes_summary)
 
         added_count = len(added_files)
         modified_count = len(modified_files)

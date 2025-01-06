@@ -1,13 +1,7 @@
-"""
-This module contains functions for formatting text output.
-"""
 
 
 def _gradient_text(text: str, start_hex: str, end_hex: str,
                    bold: bool = True) -> str:
-    """
-    Return a string with the text colored with a gradient.
-    """
     result = ""
     start_hex = start_hex.lstrip('#')
     end_hex = end_hex.lstrip('#')
@@ -24,9 +18,6 @@ def _gradient_text(text: str, start_hex: str, end_hex: str,
 
 def print_gradient(text: str, gradient: str = "light_gray",
                    line_break: bool = True) -> None:
-    """
-    Print the text with a gradient color.
-    """
     gradients = {
         "red_magenta": ("#FF2828", "#FF28FF"),
         "cyan_blue": ("#28FFFF", "#2828FF"),
@@ -42,9 +33,6 @@ def print_gradient(text: str, gradient: str = "light_gray",
 
 
 def box_print(text: str) -> str:
-    """
-    Return a string with the text in a box.
-    """
     lines = text.split('\n')
     width = max(len(line) for line in lines)
     box = f"╭{'─' * (width + 2)}╮\n"

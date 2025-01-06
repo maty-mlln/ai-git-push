@@ -1,7 +1,3 @@
-"""
-Main module for the AI Git Push tool.
-"""
-
 import signal
 import subprocess
 import sys
@@ -13,18 +9,12 @@ from git import commit_and_push_changes, is_git_repository
 
 
 def _signal_handler(_signum: int, _frame: object) -> None:
-    """
-    Handle the SIGINT signal (Ctrl+C).
-    """
     print('\n', end='')
     print_gradient("👋 Exiting...", "yellow_orange")
     sys.exit(0)
 
 
 def main() -> None:
-    """
-    Main function.
-    """
     signal.signal(signal.SIGINT, _signal_handler)
     load_dotenv()
 

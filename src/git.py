@@ -1,7 +1,3 @@
-"""
-This module contains functions to interact with Git.
-"""
-
 import os
 import subprocess
 import sys
@@ -11,9 +7,6 @@ from llm import ask_llm
 
 
 def is_git_repository() -> bool:
-    """
-    Check if the current directory is a git repository.
-    """
     try:
         subprocess.check_output(['git', 'rev-parse', '--git-dir'],
                                 stderr=subprocess.STDOUT)
@@ -23,9 +16,6 @@ def is_git_repository() -> bool:
 
 
 def _get_changed_files(filter_type: str) -> list[str]:
-    """
-    Get the list of files that have been added, modified, or deleted.
-    """
     result = subprocess.check_output(['git', 'diff', '--cached',
                                       '--name-only',
                                       f'--diff-filter={filter_type}'])
@@ -35,9 +25,6 @@ def _get_changed_files(filter_type: str) -> list[str]:
 
 
 def _is_initial_commit() -> bool:
-    """
-    Check if the current commit is the initial commit.
-    """
     try:
         subprocess.check_output(['git', 'rev-parse', 'HEAD'],
                                 stderr=subprocess.DEVNULL)
@@ -47,9 +34,6 @@ def _is_initial_commit() -> bool:
 
 
 def _get_changes_summary() -> str:
-    """
-    Get the summary of changes in the current commit.
-    """
     try:
         if _is_initial_commit():
             res = subprocess.check_output(['git', 'diff', '--cached'])
@@ -63,9 +47,6 @@ def _get_changes_summary() -> str:
 
 
 def _get_file_statistics() -> dict[str, tuple[list[str], int]]:
-    """
-    Get statistics about changed files.
-    """
     added_files: list[str] = _get_changed_files('A')
     modified_files: list[str] = _get_changed_files('M')
     deleted_files: list[str] = _get_changed_files('D')
@@ -79,9 +60,6 @@ def _get_file_statistics() -> dict[str, tuple[list[str], int]]:
 
 
 def _perform_git_commit(commit_message: str) -> None:
-    """
-    Perform the git commit operation.
-    """
     with open('commit_msg.txt', 'w', encoding='utf-8') as f:
         f.write(commit_message)
     subprocess.run(['git', 'commit', '-F', 'commit_msg.txt'],
@@ -91,9 +69,6 @@ def _perform_git_commit(commit_message: str) -> None:
 
 
 def _push_to_branch() -> None:
-    """
-    Push changes to the current branch.
-    """
     branch = subprocess.check_output([
         'git', 'branch', '--show-current']).decode().strip()
     print_gradient(f"🚀 Pushing to {branch}...", "cyan_blue")
@@ -111,9 +86,6 @@ def _push_to_branch() -> None:
 def _build_commit_message(message: str,
                           stats: dict[str, tuple[list[str], int]],
                           ai_summary: str) -> str:
-    """
-    Build the commit message from the given components.
-    """
     if message:
         return message
     commit_message: str = f"{ai_summary}\n\nDetailed changes:"
@@ -125,9 +97,6 @@ def _build_commit_message(message: str,
 
 
 def _get_user_confirmation(commit_message: str) -> bool:
-    """
-    Get user confirmation for the commit message.
-    """
     print_gradient("✅ Successfully generated commit message", "green_lime")
     print_gradient(box_print(commit_message), "light_gray")
     print_gradient("🛎️ Do you want to proceed? [Y/n] ", "yellow_orange", False)
@@ -136,9 +105,6 @@ def _get_user_confirmation(commit_message: str) -> bool:
 
 
 def commit_and_push_changes(message: str = "") -> None:
-    """
-    Generate a commit message and push to the current branch.
-    """
     try:
         stats: dict[str, tuple[list[str], int]] = _get_file_statistics()
         changes_summary = _get_changes_summary()

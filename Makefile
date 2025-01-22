@@ -1,6 +1,5 @@
 VENV_DIR := .venv
 INSTALLED_MARKER := .venv/.installed
-APP_SCRIPT := src/main.py
 MAKEFLAGS = -j$(nproc)
 
 all: $(INSTALLED_MARKER)

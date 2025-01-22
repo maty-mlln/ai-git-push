@@ -1,65 +1,13 @@
-# Prerequisites
-*.d
+# Environnement Python
+.venv/
+venv/
 
-# IDE
-.vscode/
-.pylintrc
-.flake8
-
-# Sensible data
-.env
-
-# Cache
-.mypy_cache/
+# Fichiers générés
 __pycache__/
-
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-.DS_Store
+.mypy_cache/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.installed
+.env

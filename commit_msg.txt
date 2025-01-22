@@ -1,0 +1,11 @@
+feat(build): add Makefile & requirements
+
+Detailed changes:
+
+Added (3):
+      Makefile
+      commit_msg.txt
+      requirements.txt
+
+Modified (1):
+      .gitignore

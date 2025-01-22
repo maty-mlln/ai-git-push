@@ -18,4 +18,3 @@ run: $(INSTALLED_MARKER)
 clean:
 	rm -rf $(VENV_DIR)
 	rm -f $(INSTALLED_MARKER)
-#

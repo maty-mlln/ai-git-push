@@ -13,7 +13,7 @@ $(INSTALLED_MARKER): $(VENV_DIR) requirements.txt
 	@touch $(INSTALLED_MARKER)
 
 run: $(INSTALLED_MARKER)
-	. $(VENV_DIR)/bin/activate && python $(APP_SCRIPT) && deactivate
+	-@. $(VENV_DIR)/bin/activate && python $(APP_SCRIPT) && deactivate
 
 clean:
 	rm -rf $(VENV_DIR)
